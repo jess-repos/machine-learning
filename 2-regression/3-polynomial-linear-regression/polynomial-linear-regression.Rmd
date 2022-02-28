@@ -1,0 +1,90 @@
+---
+title: "Polynomial Regression"
+output: html_notebook
+---
+
+# importing libraries
+
+```{r}
+library(ggplot2)
+```
+
+# importing dataset
+
+```{r}
+dataset <- read.csv('Position_Salaries.csv')
+
+dataset
+```
+
+# keeping only necessary columns 
+
+```{r}
+dataset <- dataset[2:3]
+
+dataset
+```
+
+# fitting polynomial regression to the dataset
+
+```{r}
+# create new columns with squared/cubed... values of Level column
+
+dataset$Level2 <- dataset$Level ^ 2
+dataset$Level3 <- dataset$Level ^ 3
+dataset$Level4 <- dataset$Level ^ 4
+
+poly_reg <- lm(
+  formula = Salary ~ .,
+  data = dataset,
+  
+)
+
+summary(poly_reg)
+```
+
+# predicting/visualizing polynomial regression results
+
+```{r}
+# regression line can be more accurate if we add more levels
+
+poly_pred <- predict(poly_reg, newdata = dataset)
+
+ggplot() +
+  geom_point(
+    aes(
+      x = dataset$Level,
+      y = dataset$Salary
+    ),
+    colour = 'red' 
+  ) + 
+  geom_line(
+    aes(
+      x = dataset$Level,
+      y = poly_pred
+    ),
+    colour = 'blue' 
+  ) + 
+  ggtitle('Salary Prediction by Level (Polynomial Regression)') +
+  xlab('Levels') +
+  ylab('Salary')
+```
+
+# predicting a new result with polynomial regression
+
+```{r}
+# match the columns of the dataset (exponential levels) excluding Salary
+p_pred <- predict(
+  poly_reg, 
+  newdata = data.frame(
+    Level = 6.5, 
+    Level2 = 6.5 ^ 2, 
+    Level3 = 6.5 ^ 3, 
+    Level4 = 6.5 ^ 4
+  )
+)
+
+p_pred
+```
+
+

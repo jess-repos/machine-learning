@@ -1,0 +1,101 @@
+---
+title: "Data Preprocessing"
+output: html_notebook
+---
+
+# installing packages
+
+```{r}
+# install.packages('caTools')
+
+library(caTools)
+```
+
+
+# importing dataset
+
+```{r}
+dataset <- read.csv('Data.csv')
+
+dataset
+```
+
+# taking care of missing data (Age, Salary)
+
+```{r}
+dataset$Age <- ifelse(
+  is.na(dataset$Age), # if there's no value
+  ave(dataset$Age, # return mean of the column values
+      FUN = function(x) mean(x, na.rm = TRUE)), 
+  dataset$Age # else return the original column value
+  )
+
+dataset$Salary <- ifelse(
+  is.na(dataset$Salary),
+  ave(dataset$Salary, 
+      FUN = function(x) mean(x, na.rm = TRUE)), 
+  dataset$Salary
+  )
+
+dataset
+```
+
+# encoding categorical data (Country, Purchased)
+
+```{r}
+dataset$Country <- factor(
+  dataset$Country, # select column to encode 
+  levels = c('France', 'Spain', 'Germany'), # what values to encode
+  labels = c(1,2,3) # replacement values
+  )
+
+dataset$Purchased <- factor(
+  dataset$Purchased, 
+  levels = c('No', 'Yes'),
+  labels = c(0, 1)
+  )
+
+dataset
+```
+
+```{r}
+plot(dataset$Age, dataset$Salary, xlab='Age', ylab='Salary')
+```
+
+
+# splitting dataset into training set and test set
+
+```{r}
+set.seed(123)
+split <- sample.split(
+  Y = dataset$Purchased, # dependent variable
+  SplitRatio = 0.8 # percentage of observations 80% for the training set 20% to the test set
+  )
+
+training_set <- subset(dataset, split == TRUE)
+test_set <- subset(dataset, split == FALSE)
+```
+
+```{r}
+training_set
+```
+
+```{r}
+test_set
+```
+
+# feature scaling (Age, Salary) to values (-1 to +1)
+
+```{r}
+training_set[,2:3] <- scale(training_set[,2:3])
+test_set[,2:3] <- scale(test_set[,2:3])
+```
+
+```{r}
+training_set
+```
+
+```{r}
+test_set
+```
+

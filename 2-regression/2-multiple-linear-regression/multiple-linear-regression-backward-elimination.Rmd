@@ -1,0 +1,208 @@
+---
+title: "Multiple Linear Regression"
+output: html_notebook
+---
+
+# BACKWARD ELIMINATION METHOD
+
+# installing packages 
+
+```{r}
+# install.packages('caTools')
+# install.packages('ggplot2')
+
+library(ggplot2)
+library(caTools)
+```
+
+# importing dataset
+
+```{r}
+dataset <- read.csv('50_Startups.csv')
+
+dataset
+```
+
+# encoding categorical values (State)
+
+```{r}
+states <- unique(dataset$State) # get all unique values on State variable
+
+dataset$State <- factor(
+  dataset$State, # select column to encode 
+  levels = states, # what values to encode
+  labels = c(1: length(states)) # replacement values(range 1 - length of states)
+)
+
+dataset
+```
+
+# splitting dataset into training set and test set
+
+```{r}
+set.seed(123)
+split <- sample.split(
+  Y = dataset$Profit, # dependent variable
+  SplitRatio = 0.8 # percentage of observations 80% for the training set 20% to the test set (recommended = 0.75)
+)
+
+training_set <- subset(dataset, split == TRUE)
+test_set <- subset(dataset, split == FALSE)
+```
+
+```{r}
+training_set
+```
+
+```{r}
+test_set
+```
+
+# building the model (backward elimination method)
+
+1. select significance level (P-value < 0.05) 
+2. fit model with all possible predictors <-  formula = Profit ~ R.D.Spend + Administration + Marketing.Spend + State
+
+```{r}
+regressor <- lm(
+  formula = Profit ~ R.D.Spend + Administration + Marketing.Spend + State,
+  data = training_set,
+)
+summary(regressor)
+```
+
+3. consider the predictor with the highest P-value (State)
+4. remove the predictor (State)
+5. fit the model without the variable <- formula = Profit ~ R.D.Spend + Administration + Marketing.Spend,
+```{r}
+regressor <- lm(
+  formula = Profit ~ R.D.Spend + Administration + Marketing.Spend,
+  data = dataset,
+)
+summary(regressor)
+```
+
+
+6. consider the predictor with the highest P-value (Administration)
+7. remove the predictor (Administration)
+8. fit the model without the variable <- formula = Profit ~ R.D.Spend + Marketing.Spend,
+
+```{r}
+regressor <- lm(
+  formula = Profit ~ R.D.Spend + Marketing.Spend,
+  data = dataset,
+)
+# P-value of Marketing.Spend went down from 0.1 to 0.06 
+# which can be considered to have a statistical significance
+summary(regressor)
+```
+
+9. consider the predictor with the highest P-value (Marketing.Spend)
+10. remove the predictor (Marketing.spend)
+11. fit the model without the variable <- formula = Profit ~ R.D.Spend,
+
+```{r}
+regressor <- lm(
+  formula = Profit ~ R.D.Spend,
+  data = dataset,
+)
+summary(regressor)
+```
+
+model is ready
+
+# predicting test set results
+
+```{r}
+# create a new set from test set excluding the Profit variable (profit is what we are trying to predict)
+new_set <- test_set[,1:4]
+
+y_pred <- predict(
+  regressor,
+  newdata = new_set
+)
+```
+```{r}
+new_set
+```
+
+```{r}
+y_pred
+```
+
+# visualizing training set results
+
+```{r}
+ggplot() + 
+  geom_point(
+    aes(
+      # dataset of what we are visualizing
+      x = training_set$R.D.Spend,  
+      y = training_set$Profit
+    ),
+    colour = 'red'
+  ) + 
+  geom_line(
+    aes(
+      # use regression from training 
+      x = training_set$R.D.Spend, 
+      predict(regressor, newdata = training_set)
+    ),
+    colour = 'blue'
+  ) + 
+  ggtitle('R.D.Spend vs Profit (Training Set)') + 
+  xlab('R.D.Spend') + 
+  ylab('Profit')
+```
+
+# visualizing actual test set results
+
+```{r}
+ggplot() + 
+  geom_point(
+    aes(
+      # dataset of what we are visualizing
+      x = test_set$R.D.Spend,  
+      y = test_set$Profit
+    ),
+    colour = 'red'
+  ) + 
+  geom_line(
+    aes(
+      # use regression from training 
+      x = training_set$R.D.Spend, 
+      predict(regressor, newdata = training_set)
+    ),
+    colour = 'blue'
+  ) + 
+  ggtitle('R.D.Spend vs Profit (Test Set)') + 
+  xlab('R.D.Spend') + 
+  ylab('Profit')
+```
+
+# visualizing predicted test set results from new set
+
+```{r}
+ggplot() + 
+  geom_point(
+    aes(
+      # dataset of what we are visualizing
+      x = test_set$R.D.Spend,  
+      y = y_pred # values of what we predicted
+    ),
+    colour = 'red'
+  ) + 
+  geom_line(
+    aes(
+      # use regression from training 
+      x = training_set$R.D.Spend, 
+      predict(regressor, newdata = training_set)
+    ),
+    colour = 'blue'
+  ) + 
+  ggtitle('R.D.Spend vs Profit Prediction (New Set)') + 
+  xlab('R.D.Spend') + 
+  ylab('Profit')
+```
+
+
